@@ -4,10 +4,15 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.xuecheng.content.mapper.TeachplanMapper;
+import org.xuecheng.content.mapper.TeachplanMediaMapper;
+import org.xuecheng.content.model.dto.BindTeachplanMediaDto;
 import org.xuecheng.content.model.dto.SaveTeachplanDto;
 import org.xuecheng.content.model.dto.TeachplanDto;
 import org.xuecheng.content.model.po.Teachplan;
+import org.xuecheng.content.model.po.TeachplanMedia;
+import org.xuecheng.exception.XueChengPlusException;
 
 import java.util.List;
 
@@ -22,6 +27,9 @@ public class TeachplanServiceImpl implements TeachplanService {
 
     @Autowired
     TeachplanMapper teachplanMapper;
+
+    @Autowired
+    TeachplanMediaMapper teachplanMediaMapper;
 
     @Override
     public List<TeachplanDto> findTeachplanTree(Long courseId) {
@@ -54,7 +62,29 @@ public class TeachplanServiceImpl implements TeachplanService {
         }
     }
 
-//    确定章/节的次序，即计算表teachplan中的orderby字段值
+    @Transactional
+    @Override
+    public void associationMedia(BindTeachplanMediaDto bindTeachplanMediaDto) {
+        //课程计划id
+        Long teachplanId = bindTeachplanMediaDto.getTeachplanId();
+        Teachplan teachplan = teachplanMapper.selectById(teachplanId);
+        if(teachplan == null){
+            XueChengPlusException.cast("课程计划不存在");
+        }
+
+        //先删除原有记录,根据课程计划id删除它所绑定的媒资
+        int delete = teachplanMediaMapper.delete(new LambdaQueryWrapper<TeachplanMedia>().eq(TeachplanMedia::getTeachplanId, bindTeachplanMediaDto.getTeachplanId()));
+
+        //再添加新记录
+        TeachplanMedia teachplanMedia = new TeachplanMedia();
+        BeanUtils.copyProperties(bindTeachplanMediaDto,teachplanMedia);
+        teachplanMedia.setCourseId(teachplan.getCourseId());
+        teachplanMedia.setMediaFilename(bindTeachplanMediaDto.getFileName());
+        teachplanMediaMapper.insert(teachplanMedia);
+    }
+
+
+    //    确定章/节的次序，即计算表teachplan中的orderby字段值
     private int getTeachplanCount(Long courseId,Long parentId){
         LambdaQueryWrapper<Teachplan> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper = queryWrapper.eq(Teachplan::getCourseId, courseId).eq(Teachplan::getParentid, parentId);

@@ -4,6 +4,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.xuecheng.content.model.dto.BindTeachplanMediaDto;
 import org.xuecheng.content.model.dto.CourseCategoryTreeDto;
 import org.xuecheng.content.model.dto.SaveTeachplanDto;
 import org.xuecheng.content.model.dto.TeachplanDto;
@@ -38,4 +39,9 @@ public class TeachplanController {
         teachplanService.saveTeachplan(teachplan);
     }
 
+    @ApiOperation(value = "课程计划和媒资信息绑定")
+    @PostMapping("/teachplan/association/media")
+    public void associationMedia(@RequestBody BindTeachplanMediaDto bindTeachplanMediaDto) {
+        teachplanService.associationMedia(bindTeachplanMediaDto);
+    }
 }
