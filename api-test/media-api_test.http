@@ -1,0 +1,18 @@
+### 上传文件
+POST {{media_host}}/media/upload/coursefile
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="filedata"; filename="2.png"
+Content-Type: application/octet-stream
+
+< C:\Users\CheungWingZong\Pictures\Screenshots\2.png
+
+###搜索课程
+GET {{search_host}}/search/course/list?pageNo=1&keywords=spring
+Content-Type: application/json
+
+
+###搜索课程
+POST {{search_host}}/search/index/course
+Content-Type: application/json
