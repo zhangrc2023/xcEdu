@@ -76,7 +76,7 @@ public class CourseSearchServiceImpl implements CourseSearchService {
             multiMatchQueryBuilder.field("name",10);
             boolQueryBuilder.must(multiMatchQueryBuilder);
         }
-        //过虑
+        //过滤
         if(StringUtils.isNotEmpty(courseSearchParam.getMt())){
             boolQueryBuilder.filter(QueryBuilders.termQuery("mtName",courseSearchParam.getMt()));
         }
@@ -145,14 +145,11 @@ public class CourseSearchServiceImpl implements CourseSearchService {
                         stringBuffer.append(str.string());
                     }
                     name = stringBuffer.toString();
-
                 }
             }
             courseIndex.setId(id);
             courseIndex.setName(name);
-
             list.add(courseIndex);
-
         }
         SearchPageResultDto<CourseIndex> pageResult = new SearchPageResultDto<>(list, totalHits.value,pageNo,pageSize);
 

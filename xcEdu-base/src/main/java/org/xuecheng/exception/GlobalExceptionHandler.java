@@ -7,6 +7,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.AccessDeniedException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,7 +45,10 @@ public class GlobalExceptionHandler {
     public RestErrorResponse exception(Exception e) {
 
         //记录异常
-        log.error("系统异常{}", e.getMessage(), e);
+        log.error("系统异常{}",e.getMessage(),e);
+        if(e instanceof AccessDeniedException){
+            return new RestErrorResponse("您没有权限操作此功能");
+        }
 
         //解析出异常信息
         RestErrorResponse restErrorResponse = new RestErrorResponse(CommonError.UNKOWN_ERROR.getErrMessage());

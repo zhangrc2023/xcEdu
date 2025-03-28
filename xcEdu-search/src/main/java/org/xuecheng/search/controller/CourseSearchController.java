@@ -12,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * @author Mr.M
- * @version 1.0
  * @description 课程搜索接口
  * @date 2022/9/24 22:31
  */
