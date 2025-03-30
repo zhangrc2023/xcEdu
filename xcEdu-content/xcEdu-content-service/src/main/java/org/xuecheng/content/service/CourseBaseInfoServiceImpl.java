@@ -55,8 +55,7 @@ public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
         queryWrapper.eq(StringUtils.isNotEmpty(courseParamsDto.getAuditStatus()), CourseBase::getAuditStatus, courseParamsDto.getAuditStatus());
         //todo:按课程发布状态查询
         //按用户所属的机构ID查询
-        //根据培训机构id拼装查询条件
-        queryWrapper.eq(CourseBase::getCompanyId,companyId);
+        queryWrapper.eq(CourseBase::getCompanyId,companyId);  //培训机构id拼装查询条件
 
         //创建page分页参数对象，参数：当前页码，每页记录数
         Page<CourseBase> page = new Page<>(pageParams.getPageNo(), pageParams.getPageSize());
@@ -201,13 +200,10 @@ public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
         }
 
         //更新营销信息
-        CourseMarket courseMarket = courseMarketMapper.selectById(courseId);
+        CourseMarket courseMarket = new CourseMarket();
         BeanUtils.copyProperties(editCourseDto,courseMarket);
-        //更新课程营销信息
-        int j = courseMarketMapper.updateById(courseMarket);
-        if(j<=0){
-            XueChengPlusException.cast("修改课程失败");
-        }
+
+        saveCourseMarket(courseMarket);
 
         //查询课程信息
         CourseBaseInfoDto courseBaseInfo = getCourseBaseInfo(courseId);
@@ -217,16 +213,16 @@ public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
 
 
     //单独写一个方法保存营销信息，逻辑：存在则更新，不存在则添加
-    private int saveCourseMarket(CourseMarket courseMarketNew) {
+    private int saveCourseMarket(CourseMarket courseMarketNew){
 
         //参数的合法性校验
         String charge = courseMarketNew.getCharge();
-        if (StringUtils.isEmpty(charge)) {
+        if(StringUtils.isEmpty(charge)){
             throw new RuntimeException("收费规则为空");
         }
         //如果课程收费，价格没有填写也需要抛出异常
-        if (charge.equals("201001")) {
-            if (courseMarketNew.getPrice() == null || courseMarketNew.getPrice().floatValue() <= 0) {
+        if(charge.equals("201001")){
+            if(courseMarketNew.getPrice() ==null || courseMarketNew.getPrice().floatValue()<=0){
 //               throw new RuntimeException("课程的价格不能为空并且必须大于0");
                 XueChengPlusException.cast("课程的价格不能为空并且必须大于0");
             }
@@ -235,17 +231,19 @@ public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
         //从数据库查询营销信息,存在则更新，不存在则添加
         Long id = courseMarketNew.getId();//主键
         CourseMarket courseMarket = courseMarketMapper.selectById(id);
-        if (courseMarket == null) {
+        if(courseMarket == null){
             //插入数据库
             int insert = courseMarketMapper.insert(courseMarketNew);
             return insert;
-        } else {
+        }else{
             //将courseMarketNew拷贝到courseMarket
-            BeanUtils.copyProperties(courseMarketNew, courseMarket);
+            BeanUtils.copyProperties(courseMarketNew,courseMarket);
             courseMarket.setId(courseMarketNew.getId());
             //更新
             int i = courseMarketMapper.updateById(courseMarket);
             return i;
         }
+
+
     }
 }

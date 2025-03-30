@@ -63,8 +63,8 @@ public class CoursePublishServiceImpl implements CoursePublishService {
     @Autowired
     CoursePublishMapper coursePublishMapper;
 
-     @Autowired
-     MqMessageService mqMessageService;
+    @Autowired
+    MqMessageService mqMessageService;
 
     @Autowired
     MediaServiceClient mediaServiceClient;
@@ -149,7 +149,7 @@ public class CoursePublishServiceImpl implements CoursePublishService {
         courseBaseMapper.updateById(courseBase);
     }
 
-//    课程发布接口调用服务实现
+    //    课程发布接口调用服务实现
     @Transactional
     @Override
     public void publish(Long companyId, Long courseId) {
@@ -186,8 +186,8 @@ public class CoursePublishServiceImpl implements CoursePublishService {
 
 
     /**
+     * @param courseId 课程id
      * @description 将要发布的课程信息保存消息表mq_message，等待调度中心分派执行器处理
-     * @param courseId  课程id
      */
     private void saveCoursePublishMessage(Long courseId) {
         MqMessage mqMessage = mqMessageService.addMessage("course_publish", String.valueOf(courseId), null, null);
@@ -208,7 +208,7 @@ public class CoursePublishServiceImpl implements CoursePublishService {
             //拿到classpath路径
             String classpath = this.getClass().getResource("/").getPath();
             //指定模板的目录
-            configuration.setDirectoryForTemplateLoading(new File(classpath+"/templates/"));
+            configuration.setDirectoryForTemplateLoading(new File(classpath + "/templates/"));
             //指定编码
             configuration.setDefaultEncoding("utf-8");
 
@@ -217,19 +217,19 @@ public class CoursePublishServiceImpl implements CoursePublishService {
             //准备数据
             CoursePreviewDto coursePreviewInfo = this.getCoursePreviewInfo(courseId);
             HashMap<String, Object> map = new HashMap<>();
-            map.put("model",coursePreviewInfo);
+            map.put("model", coursePreviewInfo);
 
             //Template template 模板, Object model 数据
             String html = FreeMarkerTemplateUtils.processTemplateIntoString(template, map);
             //输入流
             InputStream inputStream = IOUtils.toInputStream(html, "utf-8");
-            htmlFile = File.createTempFile("coursepublish",".html");
+            htmlFile = File.createTempFile("coursepublish", ".html");
             //输出文件
             FileOutputStream outputStream = new FileOutputStream(htmlFile);
             //使用流将html写入文件
-            IOUtils.copy(inputStream,outputStream);
-        }catch (Exception e){
-            log.error("页面静态化出现问题,课程id:{}",courseId,e);
+            IOUtils.copy(inputStream, outputStream);
+        } catch (Exception e) {
+            log.error("页面静态化出现问题,课程id:{}", courseId, e);
             e.printStackTrace();
         }
         return htmlFile;
@@ -242,15 +242,26 @@ public class CoursePublishServiceImpl implements CoursePublishService {
             //将file转成MultipartFile
             MultipartFile multipartFile = MultipartSupportConfig.getMultipartFile(file);
             //远程调用得到返回值
-            String upload = mediaServiceClient.upload(multipartFile, "course/"+courseId+".html");
-            if(upload==null){
-                log.debug("远程调用走降级逻辑得到上传的结果为null,课程id:{}",courseId);
+            String upload = mediaServiceClient.upload(multipartFile, "course/" + courseId + ".html");
+            if (upload == null) {
+                log.debug("远程调用走降级逻辑得到上传的结果为null,课程id:{}", courseId);
                 XueChengPlusException.cast("上传静态文件过程中存在异常");
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             XueChengPlusException.cast("上传静态文件过程中存在异常");
         }
     }
 
+    /**
+     * 根据课程id查询课程发布信息
+     * @param courseId
+     * @return 已发布课程的信息
+     */
+    public CoursePublish getCoursePublish(Long courseId) {
+        CoursePublish coursePublish = coursePublishMapper.selectById(courseId);
+        return coursePublish;
+    }
+
 }
+
