@@ -11,10 +11,8 @@ import org.xuecheng.content.service.CourseBaseInfoService;
 import org.xuecheng.content.service.CoursePublishService;
 
 /**
- * @author Mr.M
  * @version 1.0
  * @description TODO
- * @date 2023/2/21 10:33
  */
 @RestController
 @RequestMapping("/open")

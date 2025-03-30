@@ -208,7 +208,6 @@ public class MediaFileServiceImpl implements MediaFileService {
      * @author Mr.M
      * @date 2022/10/12 21:22
      */
-    @Transactional
 //    @Transactional仅对代理对象生效，而addMediaFilesToDb()只是实MediaFileServiceImpl的实例对象，实例对象事务注解是没用的
 //    非事务方法调用同类一个事务方法，事务无法控制，意味着addMediaFilesToDb()方法运行时产生异常的话，事务无法回滚
 //    解决办法很简单：只要注入容器就是代理对象，那么可以把方法提到接口成为抽象方法，然后通过自动注入容器绑定到类中一个属性即可得到代理对象
@@ -218,6 +217,7 @@ public class MediaFileServiceImpl implements MediaFileService {
 //    MediaFileService currentProxy;
 //    MediaFiles mediaFiles = currentProxy.addMediaFilesToDb(companyId, fileMd5, uploadFileParamsDto, bucket_mediafiles, objectName);
 //    以上方法可能造成循环依赖的问题？解决办法->编程式事务
+    @Transactional
     public MediaFiles addMediaFilesToDb(Long companyId, String fileMd5, UploadFileParamsDto uploadFileParamsDto, String bucket, String objectName) {
         //将文件信息保存到数据库
         MediaFiles mediaFiles = mediaFilesMapper.selectById(fileMd5);

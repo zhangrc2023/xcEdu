@@ -41,7 +41,6 @@ public class RestResponse<T> {
 
     /**
      * 错误信息的封装
-     *
      * @param msg
      * @param <T>
      * @return
@@ -64,7 +63,6 @@ public class RestResponse<T> {
 
     /**
      * 添加正常响应数据（包含响应内容）
-     *
      * @return RestResponse Rest服务封装相应数据
      */
     public static <T> RestResponse<T> success(T result) {
@@ -82,7 +80,6 @@ public class RestResponse<T> {
 
     /**
      * 添加正常响应数据（不包含响应内容）
-     *
      * @return RestResponse Rest服务封装相应数据
      */
     public static <T> RestResponse<T> success() {

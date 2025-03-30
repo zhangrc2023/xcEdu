@@ -41,6 +41,4 @@ public class MediaOpenController {
         }
         return RestResponse.success(mediaFiles.getUrl());
     }
-
-
 }
