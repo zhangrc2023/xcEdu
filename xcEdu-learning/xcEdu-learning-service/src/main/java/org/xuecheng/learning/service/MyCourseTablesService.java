@@ -1,8 +1,11 @@
 package org.xuecheng.learning.service;
 
 
+import org.xuecheng.learning.model.dto.MyCourseTableParams;
 import org.xuecheng.learning.model.dto.XcChooseCourseDto;
 import org.xuecheng.learning.model.dto.XcCourseTablesDto;
+import org.xuecheng.learning.model.po.XcCourseTables;
+import org.xuecheng.model.PageResult;
 
 /**
  * @author Mr.M
@@ -37,5 +40,12 @@ public interface MyCourseTablesService {
      * @return
      */
     public boolean saveChooseCourseSuccess(String chooseCourseId);
+
+    /**
+     * @description 我的课程表
+     * @param params
+     * @return com.xuecheng.base.model.PageResult<com.xuecheng.learning.model.po.XcCourseTables>
+     */
+    public PageResult<XcCourseTables> mycoursetables(MyCourseTableParams params);
 
 }

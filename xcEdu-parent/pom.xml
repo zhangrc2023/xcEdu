@@ -8,6 +8,7 @@
         <version>2.3.7.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
+
     <groupId>org.xuecheng</groupId>
     <artifactId>xcEdu-parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
@@ -15,6 +16,22 @@
     <description>xcEdu-parent</description>
     <packaging>pom</packaging>
 
+    <!-- parent工程职责1：模块聚合 -->
+    <modules>
+        <module>../xcEdu-base</module>
+        <module>../xcEdu-checkcode</module>
+        <module>../xcEdu-gateway</module>
+        <module>../xcEdu-auth</module>
+        <module>../xcEdu-content</module>
+        <module>../xcEdu-learning</module>
+        <module>../xcEdu-media</module>
+        <module>../xcEdu-orders</module>
+        <module>../xcEdu-message-sdk</module>
+        <module>../xcEdu-search</module>
+        <module>../xcEdu-system</module>
+    </modules>
+
+    <!-- parent工程职责2：依赖管理 -->
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>

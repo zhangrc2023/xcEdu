@@ -1,6 +1,7 @@
 package org.xuecheng.learning.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +12,12 @@ import org.xuecheng.exception.XueChengPlusException;
 import org.xuecheng.learning.feignclient.ContentServiceClient;
 import org.xuecheng.learning.mapper.XcChooseCourseMapper;
 import org.xuecheng.learning.mapper.XcCourseTablesMapper;
+import org.xuecheng.learning.model.dto.MyCourseTableParams;
 import org.xuecheng.learning.model.dto.XcChooseCourseDto;
 import org.xuecheng.learning.model.dto.XcCourseTablesDto;
 import org.xuecheng.learning.model.po.XcChooseCourse;
 import org.xuecheng.learning.model.po.XcCourseTables;
+import org.xuecheng.model.PageResult;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -269,4 +272,33 @@ public class MyCourseTablesServiceImpl implements MyCourseTablesService {
 
         return xcCourseTables;
     }
+
+
+    //我的课程表接口函数
+    @Override
+    public PageResult<XcCourseTables> mycoursetables(MyCourseTableParams params) {
+        //用户id
+        String userId = params.getUserId();
+        //当前页码
+        int pageNo = params.getPage();
+        //每页记录数
+        int size = params.getSize();
+
+        Page<XcCourseTables> courseTablesPage = new Page<>(pageNo, size);
+        LambdaQueryWrapper<XcCourseTables> lambdaQueryWrapper = new LambdaQueryWrapper<XcCourseTables>().eq(XcCourseTables::getUserId, userId);
+
+        //查询数据
+        Page<XcCourseTables> result = courseTablesMapper.selectPage(courseTablesPage, lambdaQueryWrapper);
+
+        //数据列表
+        List<XcCourseTables> records = result.getRecords();
+        //总记录数
+        long total = result.getTotal();
+
+        //List<T> items, long counts, long page, long pageSize
+        PageResult pageResult = new PageResult(records, total, pageNo, size);
+
+        return pageResult;
+    }
+
 }

@@ -35,8 +35,11 @@ public class CoursePublishController {
         //封装数据
         CoursePreviewDto coursePreviewDto = new CoursePreviewDto();
 
-        //查询课程发布表
+        //查询课程发布表：不使用redis缓存技术
         CoursePublish coursePublish = coursePublishService.getCoursePublish(courseId);
+//        查询课程发布表：使用redis缓存来优化服务型能
+//        CoursePublish coursePublish = coursePublishService.getCoursePublishFromCache(courseId);
+
         if (coursePublish == null) {
             return coursePreviewDto;
         }
@@ -90,6 +93,8 @@ public class CoursePublishController {
     public CoursePublish getCoursepublish(@PathVariable("courseId") Long courseId) {
         //查询课程发布信息
         CoursePublish coursePublish = coursePublishService.getCoursePublish(courseId);
+        //使用redis缓存技术提供微服务面对高并发场景时的性能
+//        CoursePublish coursePublish = coursePublishService.getCoursePublishFromCache(courseId);
         return coursePublish;
     }
 

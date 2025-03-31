@@ -57,4 +57,12 @@ public interface CoursePublishService {
      * @return
      */
     public CoursePublish getCoursePublish(Long courseId);
+
+
+    /**
+     * 使用redis缓存优化后的根据课程id查询课程发布信息的接口
+     * @param courseId
+     * @return 已发布课程的信息
+     */
+    public CoursePublish getCoursePublishFromCache(Long courseId);
 }

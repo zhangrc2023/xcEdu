@@ -34,6 +34,9 @@ spring:
           - data-id: feign-${spring.profiles.active}.yaml
             group: xcEdu-common
             refresh: true
+          - data-id: redis-${spring.profiles.active}.yaml   #使用redis缓存优化微服务性能
+            group: xcEdu-common
+            refresh: true
 
 #  datasource:
 #    driver-class-name: com.mysql.cj.jdbc.Driver

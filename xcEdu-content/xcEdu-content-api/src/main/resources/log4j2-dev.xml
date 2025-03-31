@@ -76,7 +76,9 @@
         <!--DEBUG   500-->
         <!--TRACE   600-->
         <!--ALL   Integer.MAX_VALUE-->
-        <Root level="DEBUG" includeLocation="true">
+<!--        开发环境日志等级可以用DEBUG，生产环境建议用INFO，因为打印大量日志会耗费系统性能  -->
+<!--        <Root level="DEBUG" includeLocation="true">-->
+        <Root level="INFO" includeLocation="true">
             <AppenderRef ref="AsyncAppender"/>
             <AppenderRef ref="Console"/>
             <AppenderRef ref="DebugAppender"/>

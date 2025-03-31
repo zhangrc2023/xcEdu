@@ -1,6 +1,7 @@
 package org.xuecheng.content.service;
 
 import com.alibaba.fastjson.JSON;
+import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +9,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
@@ -36,6 +38,11 @@ import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 
 /**
  * @description 课程发布相关接口实现
@@ -69,6 +76,12 @@ public class CoursePublishServiceImpl implements CoursePublishService {
     @Autowired
     MediaServiceClient mediaServiceClient;
 
+    @Autowired
+    RedisTemplate redisTemplate;
+
+    @Autowired
+    RedissonClient redissonClient;
+
     //    课程预览接口调用服务实现
     @Override
     public CoursePreviewDto getCoursePreviewInfo(Long courseId) {
@@ -81,6 +94,7 @@ public class CoursePublishServiceImpl implements CoursePublishService {
         coursePreviewDto.setTeachplans(teachplanTree);
         return coursePreviewDto;
     }
+
 
     //    课程提交审核接口调用服务实现
     @Transactional
@@ -149,6 +163,7 @@ public class CoursePublishServiceImpl implements CoursePublishService {
         courseBaseMapper.updateById(courseBase);
     }
 
+
     //    课程发布接口调用服务实现
     @Transactional
     @Override
@@ -205,15 +220,21 @@ public class CoursePublishServiceImpl implements CoursePublishService {
         //最终的静态文件
         File htmlFile = null;
         try {
+            //通过磁盘目录的方式得到模板所在目录，一旦达成可执行jar包部署到服务器上就找不到该目录地址了
+            // 应该用下面217行流的方式目录在部署服务器上的地址
             //拿到classpath路径
-            String classpath = this.getClass().getResource("/").getPath();
+//            String classpath = this.getClass().getResource("/").getPath();
             //指定模板的目录
-            configuration.setDirectoryForTemplateLoading(new File(classpath + "/templates/"));
+//            configuration.setDirectoryForTemplateLoading(new File(classpath+"/templates/"));
+
+            //改用流的方式确定模板的目录
+            configuration.setTemplateLoader(new ClassTemplateLoader(this.getClass().getClassLoader(), "/templates"));
+
             //指定编码
             configuration.setDefaultEncoding("utf-8");
-
-            //得到模板
+            //获取模板文件
             Template template = configuration.getTemplate("course_template.ftl");
+
             //准备数据
             CoursePreviewDto coursePreviewInfo = this.getCoursePreviewInfo(courseId);
             HashMap<String, Object> map = new HashMap<>();
@@ -235,6 +256,7 @@ public class CoursePublishServiceImpl implements CoursePublishService {
         return htmlFile;
     }
 
+
     //    课程发布后的分布式事务控制之课程页面静态化Step2
     @Override
     public void uploadCourseHtml(Long courseId, File file) {
@@ -253,8 +275,10 @@ public class CoursePublishServiceImpl implements CoursePublishService {
         }
     }
 
+
     /**
      * 根据课程id查询课程发布信息
+     *
      * @param courseId
      * @return 已发布课程的信息
      */
@@ -263,5 +287,70 @@ public class CoursePublishServiceImpl implements CoursePublishService {
         return coursePublish;
     }
 
-}
 
+    /**
+     * 使用redis缓存优化后的根据课程id查询课程发布信息的接口
+     * @param courseId
+     * @return 已发布课程的信息
+     */
+    // 解决缓存穿透方法：查询请求校验/布隆过滤器/Guava/分布式锁（redisson 或 SETNX+lua脚本）
+    // 缓存雪崩解决办法：同步锁（性能差）/ 缓存预热：使用专门的后台程序来定时将数据库中的数据提前存入缓存
+    // 缓存击穿解决办法：分布式锁（Redisson（通过watchdog线程来自动延长锁的有效时间，能够比较精确地确定锁的有效时间，最大限度提高性能））或者SETNX（难以确定锁的有效时间，过长影响效率，过短不利于长时间任务执行））
+    public CoursePublish getCoursePublishFromCache(Long courseId) {
+
+        //从缓存中查询
+        Object jsonObj = redisTemplate.opsForValue().get("course:" + courseId);
+        //缓存中有
+        if (jsonObj != null) {
+//            System.out.println("=============从缓存中查询=============");
+            //缓存中有直接返回数据
+            String jsonString = jsonObj.toString();
+            if ("null".equals(jsonString)) {
+                // 对于不存在数据库中的查询，为避免缓存穿透，可以设置该查询的value为"null"或特殊值，并存入redis缓存
+                // 该键值对需要设置在redis中的有效时间
+                // 解决缓存穿透的其他方法：查询请求校验/布隆过滤器/Guava/分布式锁（redisson或SETNX）
+                return null;
+            }
+            CoursePublish coursePublish = JSON.parseObject(jsonString, CoursePublish.class);
+            return coursePublish;
+        } else {
+            RLock lock = redissonClient.getLock("coursequerylock:" + courseId);
+            //获取分布式锁，实现方式主要有三种：基于数据库的乐观锁/SETNX/set nx/Redisson/zookeeper
+            //客服同步锁无法解决分布在不同服务器上的多个微服务实例同时出现高并发访问数据库情况时所带来的缓存三兄弟问题
+            lock.lock();   //自旋锁，其他没有得到锁的事务会反复请求锁
+            try {
+                //再次查询一下缓存，尽量减少并发事务访问数据库
+                //从缓存中查询
+                jsonObj = redisTemplate.opsForValue().get("course:" + courseId);
+                //缓存中有
+                if (jsonObj != null) {
+                    //缓存中有直接返回数据
+                    String jsonString = jsonObj.toString();
+                    if ("null".equals(jsonString)) {
+                        // 对于不存在数据库中的查询，为避免缓存穿透，可以设置该查询的value为"null"或特殊值，并存入redis缓存
+                        // 该键值对需要设置在redis中的有效时间
+                        // 解决缓存穿透的其他方法：Guava/redisson/分布式锁
+                        return null;
+                    }
+                    CoursePublish coursePublish = JSON.parseObject(jsonString, CoursePublish.class);
+                    return coursePublish;
+                }
+
+                //从数据库查询
+                CoursePublish coursePublish = getCoursePublish(courseId);
+                //查询完成再存储到redis
+                redisTemplate.opsForValue().set("course:" + courseId, JSON.toJSONString(coursePublish), 300, TimeUnit.SECONDS);
+//                为redis缓存中存储的键值对设置不同的有效时间，避免出现大量key同时失效的现象，从而解决缓存雪崩问题；但是设置有效时间会带来其他问题：缓存击穿
+//                缓存雪崩其他解决办法：同步锁（性能差）/ 缓存预热：使用专门的后台程序来定时将数据库中的数据提前存入缓存
+//                redisTemplate.opsForValue().set("course:" + courseId, JSON.toJSONString(coursePublish), 300 + new Random().nextInt(100), TimeUnit.SECONDS);
+                return coursePublish;
+
+            } finally {
+                //手动释放锁
+                lock.unlock();
+            }
+        }
+    }
+
+
+}

@@ -96,6 +96,25 @@
             <artifactId>feign-form-spring</artifactId>
             <version>3.8.0</version>
         </dependency>
+
+
+        <!-- redis缓存的相关依赖优化微服务性能 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+            <version>2.6.2</version>
+        </dependency>
+        <!--        redisson实现分布式锁  -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-boot-starter</artifactId>
+            <version>3.11.2</version>
+        </dependency>
+
     </dependencies>
 
 </project>
