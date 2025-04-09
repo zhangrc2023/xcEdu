@@ -1,0 +1,12 @@
+server:
+  servlet:
+    context-path: /content
+  port: 9999
+
+#配置本地优先
+spring:
+ cloud:
+  config:
+    override-none: true
+
+    
